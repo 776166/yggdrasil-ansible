@@ -1,0 +1,16 @@
+- name: create settings_local.py
+  template:
+    src="../../../../dev/etc/dist/settings_local.py"
+    dest="{{ base_dir }}/etc/settings_local.py"
+    # mode=0660
+  tags:
+    - update-settings_local
+    - update-django
+
+- name: create uwsgi.yaml
+  template:
+    src=../../../../dev/etc/dist/uwsgi.yaml
+    dest="{{ base_dir }}/etc"
+  tags:
+    - update-uwsgi
+    - update-django

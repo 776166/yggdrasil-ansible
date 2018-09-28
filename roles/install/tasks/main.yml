@@ -1,0 +1,198 @@
+---
+# Tags:
+# - dir:            Create directories
+# - pip             Install pip pip-requirements.txt
+# - env             Install/Update env.conf
+# - certbot:        Install nginx sertbot certificates
+# - db:             Install DB
+# - update-uwsgi    Install/Update uwsgi
+# - update-django   Install/Update django app
+
+# - nginx_config:   Update nginx config
+# - start:          Start UI
+
+  # - name: check OS id and version
+  #   assert:
+  #     that:
+  #       - "ansible_lsb.id == 'Ubuntu'"
+  #       - "ansible_lsb.release >= '16.04'"
+
+  - name: create installation directory
+    file: path={{ base_dir }}
+      state=directory
+      recurse=yes
+    tags:
+      - dir
+
+  - name: Create directories
+    include: dirs.yml
+    tags:
+      - dir
+
+  # - name: Prepare to publish
+  #   local_action: command /home/{{ user }}/{{ project_dir }}/dev/bin/prepare2publish.sh
+  #   tags:
+  #     - prepare2publish
+  #
+  # - name: Create distribution
+  #   local_action: command /home/{{ user }}/{{ project_dir }}/dev/bin/backup_files.sh -d
+  #   tags:
+  #     - prepare2publish
+
+  - name: copy dist archives
+    copy: src="../../../../dev/backups/{{ item }}"
+      dest="{{ base_dir }}/tmp"
+    with_items:
+      - "transfer_dist-files.zip"
+  #     - "last-pgsql.gz"
+    tags:
+      - dist
+
+  - name: Extracting dist
+    unarchive:
+      src: "{{ base_dir }}/tmp/transfer_dist-files.zip"
+      dest: "{{ base_dir }}/"
+      remote_src: yes
+    tags:
+      - dist
+
+  - name: create env.conf
+    template:
+      src=../../../dev/etc/dist/env.conf
+      dest="{{ base_dir }}/etc/env.conf"
+    tags:
+      - env
+
+  - name: Create virtualenv and update pip
+    pip:
+      name: pip
+      extra_args: --upgrade
+      # virtualenv_python: python{{ python_version }} # Do not working :/
+      virtualenv: "{{ base_dir }}/{{ venv }}"
+      virtualenv_command: /usr/bin/python{{ python_version }} -m venv
+    tags:
+      - pip
+
+  - name: Install eggs
+    pip:
+      requirements: "{{ base_dir }}/site/pip-requirements.txt"
+      # virtualenv_python: python{{ python_version }}
+      virtualenv: "{{ base_dir }}/{{ venv }}"
+      virtualenv_command: /usr/bin/python{{ python_version }} -m venv
+    tags:
+      - pip
+
+  - name: Django
+    include: django.yml
+
+  - name: Certbot sertificates
+    include: certbot.yml
+    become: yes
+    tags:
+      - certbot
+
+  - name: Nginx
+    become: yes
+    include: nginx.yml
+    tags:
+      - nginx_config
+      - start
+
+  - name: Database
+    include: db-postgres.yml
+    tags:
+      - db
+
+  - name: Memcached
+    become: yes
+    include: memcached.yml
+    when: mode != 'dev'
+
+
+# 2DO: copy css.min.conf & js.min.conf iа dev
+
+####################################################################################################
+# ####################
+# # If exists, try to stop. Ignore if new ui
+#   - name: Switch off
+#     become: yes
+#     become_user: mad
+#     shell: "{{ ui_dir }}/bin/off"
+#     ignore_errors: yes
+#     tags:
+#       - update-bin
+#       - start
+#
+#   - name: Stop uwsgi
+#     become: yes
+#     become_user: mad
+#     shell: "{{ ui_dir }}/bin/uwsgictl stop"
+#     ignore_errors: yes
+#     tags:
+#       - update-bin
+#       - start
+# ####################
+#
+
+
+
+#
+#   - name: clean app directory if exist
+#     file: path={{ ui_dir }}/{{ item }}
+#       state=absent
+#       owner=mad
+#       group=mad
+#     with_items:
+#       - app
+#       - bin
+#     tags:
+#       - update-bin
+#
+#   - name: Copy app
+#     # become: yes
+#     # become_user: mad
+#     shell: cp -r /home/mad/.madbanner/ui/{{ ui_version }}/* {{ ui_dir }}
+#     tags:
+#       - update-bin
+#
+#   - name: change rights
+#     file:
+#       path={{ ui_dir }}/{{ item }}
+#       owner=mad
+#       group=mad
+#       recurse=yes
+#     with_items:
+#       - app
+#       - bin
+#     tags:
+#       - update-bin
+#
+#   # - pause: minutes=5
+#
+
+#
+
+#
+
+#
+
+#
+#   - name: Nginx
+#     include: nginx.yml
+#
+#   # - name: Make app dir writable for group 'mad'
+#   #   become: yes
+#   #   become_user: root
+#   #   shell: "chmod -R g+w {{ ui_dir }}/{{ item }}"
+#
+#   - name: Init
+#     include: test_sites.yml
+#
+#   - name: Init
+#     include: init.yml
+#
+#   # - name: "Create webui user. If fail ( version < 0.8), ignore"
+#   #   become: yes
+#   #   become_user: mad
+#   #   shell: "cd {{ ui_dir }}/app/ && {{ ui_dir }}/app/manage.py createwebuiuser 'madpassword' '{{ ui_webuiuser_password }}'"
+#   #   ignore_errors: yes

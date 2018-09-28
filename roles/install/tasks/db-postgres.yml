@@ -1,0 +1,44 @@
+######### DBASE
+
+  - name: create Postgres user
+    become: yes
+    become_user: postgres
+    postgresql_user:
+      name={{ db }}
+      password={{ db_pass }}
+
+  - name: create Postgres database
+    become: yes
+    become_user: postgres
+    postgresql_db:
+      name={{ db }}
+      owner={{ db }}
+
+  - name: grant privileges
+    become: yes
+    become_user: postgres
+    postgresql_privs:
+      db={{ db }}
+      privs=ALL
+      type=database
+      role={{ db }}
+
+  - name: create .pgpass
+    template:
+      src=pgpass.conf
+      dest={{ base_dir }}/.pgpass
+      mode=0600
+
+  # - name: run syncdb
+  #   become: yes
+  #   become_user: "{{ user }}"
+  #   shell: "{{ base_dir }}/site/manage.py syncdb --noinput"
+  #   tags:
+  #     - update-bin
+  #
+  # - name: run migrate
+  #   become: yes
+  #   become_user: "{{ user }}"
+  #   shell: "{{ base_dir }}/site/manage.py migrate"
+  #   tags:
+  #     - update-bin

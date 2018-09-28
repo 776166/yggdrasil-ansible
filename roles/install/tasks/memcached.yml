@@ -1,0 +1,25 @@
+####### Memcached
+- name: create memcached conf
+  become: yes
+  template:
+    src="memcached.conf"
+    dest="/etc/{{ memcached }}.conf"
+
+- name: create memcached systemd service
+  become: yes
+  template:
+    src="memcached.service.conf"
+    dest="/lib/systemd/system/{{ memcached }}.service"
+
+- name: start memcached service
+  become: yes
+  systemd:
+    name={{ memcached }}
+    state=started 
+
+- name: enable memcached service
+  become: yes
+  systemd:
+    name={{ memcached }}
+    enabled=yes
+    masked=no

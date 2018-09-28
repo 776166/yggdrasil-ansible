@@ -1,0 +1,37 @@
+### Prepare
+- name: Disable nginx config
+  file: 
+    path=/etc/nginx/sites-enabled/{{ nginx_conf }}
+    state=absent
+  when: nginx_symlink_enabled.stat.exists == True
+
+- name: create certbot nginx config
+  template:
+    src=nginx_certbot.conf
+    dest=/etc/nginx/sites-enabled/certbot_{{ nginx_conf }}
+    owner=root
+    group=root
+    mode=0640
+
+- name: reload nginx
+  service: name=nginx state=reloaded
+
+### Generation
+- name: Generating sertificates
+  shell: certbot certonly --non-interactive --keep-until-expiring --agree-tos --email {{ server.sysadmin_email }} -d {{ server.url }}
+  # debug: msg="certbot certonly --non-interactive --keep-until-expiring --agree-tos --email {{ sysadmin_email }} {{ certbot_sites }}"
+
+## Done
+- name: Delete certbot nginx config
+  file:
+    path=/etc/nginx/sites-enabled/certbot_{{ nginx_conf }}
+    state=absent
+
+- name: Enable nginx config
+  file: src=/etc/nginx/sites-available/{{ nginx_conf }}
+    dest=/etc/nginx/sites-enabled/{{ nginx_conf }}
+    state=link
+  when: nginx_symlink_enabled.stat.exists == True
+
+- name: reload nginx
+  service: name=nginx state=reloaded

@@ -1,0 +1,22 @@
+---
+  - name: add postgresql repository key
+    apt_key: url=https://www.postgresql.org/media/keys/ACCC4CF8.asc
+
+  - name: add postgresql repository
+    apt_repository: repo='deb https://apt.postgresql.org/pub/repos/apt/ {{ ansible_lsb.codename }}-pgdg main'
+      update_cache=yes
+
+  - name: install postgresql
+    apt: name=postgresql-9.3 state=present
+
+  - name: install postgresql config
+    copy: src=pg_hba.conf
+      dest=/etc/postgresql/9.3/main/pg_hba.conf
+    register: postgresql_config
+
+  - name: restart postgresql daemon
+    service: name=postgresql state=restarted
+    when: postgresql_config.changed
+
+  - name: install psycopg2
+    apt: name=python-psycopg2 state=present

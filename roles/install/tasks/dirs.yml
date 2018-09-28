@@ -1,0 +1,39 @@
+######### DIRS
+  - name: create 'etc/', 'tmp/' dirs
+    file:
+      dest={{ base_dir }}/{{ item }}
+      state=directory
+      owner={{ user }}
+      group={{ user }}
+    with_items:
+      - etc
+      - tmp
+      - data/media
+      - data/import
+      - data/export
+      # - media # Moved to data/media
+
+
+  - name: create target dirs for logs and backups
+    file:
+      path=/var/{{ item }}/{{ user }}/{{ project_dir }}/{{ mode }}
+      state=directory
+      recurse=yes
+      # owner={{ user }}
+      # group={{ user }}
+      # mode=0750
+    with_items:
+      - log
+      - backups
+
+  - name: create symlinks for logs and backups
+    file:
+      src=/var/{{ item }}/{{ user }}/{{ project_dir }}/{{ mode }}
+      dest={{ base_dir }}/{{ item }}
+      state=link
+      # owner={{ user }}
+      # group={{ user }}
+      # mode=0750
+    with_items:
+      - log
+      - backups

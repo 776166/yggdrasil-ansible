@@ -1,0 +1,44 @@
+- stat:
+    path: /etc/letsencrypt/live/{{ server.url }}/fullchain.pem
+  # become: yes
+  register: fullchain_pem
+- stat:
+    path: /etc/letsencrypt/live/{{ server.url }}/privkey.pem
+  # become: yes
+  register: privkey_pem
+- stat:
+    path: /etc/nginx/sites-enabled/{{ nginx_conf }}
+  # become: yes
+  register: nginx_symlink_enabled
+
+
+
+# - name: enable nginx config
+#   file: src=/etc/nginx/sites-available/{{ ui_nginx_conf }}
+#     dest=/etc/nginx/sites-enabled/{{ ui_nginx_conf }}
+#     state=link
+
+
+- debug: msg="No {{ server.url }}/fullchain.pem"
+  when: fullchain_pem.stat.exists == False
+- debug: msg="No {{ server.url }}/privkey.pem"
+  when: privkey_pem.stat.exists == False
+- debug: msg="Nginx symlink exists"
+  when: nginx_symlink_enabled.stat.exists == True
+- debug: msg="Nginx symlink do not exists"
+  when: nginx_symlink_enabled.stat.exists == False
+
+- include: generate_certificate.yml
+  # become: yes
+  when: fullchain_pem.stat.exists == False or privkey_pem.stat.exists == False
+
+#
+# - debug: msg="Certificates needed to be generate"
+#   when: fullchain_pem.stat.exists == False or privkey_pem.stat.exists == False
+#
+# - debug: msg="Nginx symlink needed to be disabled"
+#   when:  nginx_symlink_enabled.stat.exists == True
+#
+# - name: Generating sertificates
+#   debug: msg="certbot certonly --agree-tos --email support@madbanner.com {{ certbot_sites }}"
+#   when: fullchain_pem.stat.exists == False or privkey_pem.stat.exists == False

@@ -1,0 +1,35 @@
+---
+version: 0.1
+
+venv: "env{{ python_version }}"
+
+server: "{{ servers[mode] }}"
+user: "{{ server.user }}"
+
+port: "{{ server.port }}"
+
+base_dir: "/home/{{ user }}/{{ project_dir }}/{{ mode }}"
+uwsgi_socket: "/var/tmp/{{ server.url }}.uwsgi.sock"
+nginx_conf: "{{ server.url }}.nginx.conf"
+
+default_db_name: "{{ server.url | replace('.','_') }}"
+db: "{{ server.db_name|default(default_db_name)}}"
+db_pass: "{{ server.db_pass|default(lookup('password', '/tmp/ansible-yggdrasil-db_pass' + server.url + '_password chars=ascii_letters,digits,hexdigits,punctuation length=64')) }}"
+
+memcached_port: "{{ server.port + 5 }}"
+memcached: "memcached_{{ server.url | replace('.','_')}}"
+
+sysadmins: "{{ server.sysadmins }}"
+email_from: "{{ server.email_from }}"
+email_from_name: "{{ server.email_from_name|default('Admin') }}"
+email_server: "{{ server.email_server }}"
+email_host: "{{ server.email_host }}"
+email_use_tls: '{{ server.email_use_tls }}'
+email_host_user: "{{ server.email_host_user }}"
+email_host_user_password: '{{ server.email_host_user_password }}'
+email_port: '{{ server.email_port }}'
+
+internal_ip: '{{ server.internal_ip }}'
+
+# Generated at LOCAL machine and do not regenerated untill file deletion
+secret_key: "{{ lookup('password', '/tmp/ansible-yggdrasil-secret_key' + server.url + '_password chars=ascii_letters,digits,hexdigits,punctuation length=64') }}"

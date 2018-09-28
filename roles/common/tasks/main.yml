@@ -1,0 +1,57 @@
+---
+  - name: check OS id and version
+    assert:
+      that:
+        - "ansible_lsb.id == 'Ubuntu'"
+        - "ansible_lsb.release >= '16.04'"
+
+
+  - name: creates root dir for backups and logs
+    file: path=/var/{{ item }}/{{ user }}/
+        state=directory
+        owner={{ user }}
+        group={{ user }}
+        mode=0700
+    with_items:
+      - log
+      - backups
+
+  # - name: creates various directories
+  #   file: path="/home/{{ user }}/.local/etc/{{ item }}/sites/"
+  #       state=directory
+  #       owner={{ user }}
+  #       group={{ user }}
+  #       mode=0700
+  #   with_items:
+  #     - alive
+  #     - uwsgi
+
+### Certbot
+  - name: Install certbot
+    include: certbot.yml
+    tags:
+      - certbot
+
+### Postgres
+  - name: Install Posrgesql
+    include: postgres.yml
+
+##########################################################################
+  - name: apt-get update
+    apt: update_cache=yes
+    tags:
+      - apt
+
+  - name: install common packages
+    apt: name={{ item }} state=present
+    with_items:
+      # - mc
+      - zip
+      - pwgen
+      - nginx
+      - git
+      - ntp
+      - acl #For correct ansible >= 2.1
+      # - python-pip #For httplib2 via pip installation -> Ansible >= 2.1 "uri" command
+    tags:
+      - apt

@@ -1,0 +1,41 @@
+---
+  - name: install software-properties-common
+    apt: name=software-properties-common state=present
+
+  - name: apt-get update
+    apt: update_cache=yes
+
+  - name: add certbot repository key
+    apt_repository:
+      repo: 'ppa:certbot/certbot'
+
+  - name: apt-get update
+    apt: update_cache=yes
+
+  - name: install python-certbot-nginx
+    apt: name=python-certbot-nginx state=present
+
+  - name: creates dir for letsencrypt if not exist
+    file: path=/etc/letsencrypt
+        state=directory
+
+  - name: install cli.ini
+    template:
+      src=letsencrypt.cli.ini
+      dest=/etc/letsencrypt/cli.ini
+
+  - name: install nginx acme include
+    template: src=nginx.acme.conf
+      dest=/etc/nginx/acme
+
+  - name: creates dir for letsencrypt if not exist
+    file: path=/var/www/html/.well-known/
+        state=directory
+
+  - name: reload nginx
+    service: name=nginx state=reloaded
+
+  - name: install cron for cert renew
+    template:
+      src=certbot.cron.conf
+      dest=/etc/cron.d/certbot

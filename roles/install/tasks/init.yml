@@ -1,0 +1,36 @@
+######### INIT
+  - name: create ui service script
+    template: >
+      src=ui_init_script
+      dest={{ ui_service }}
+      mode=0755
+    tags:
+      - start
+
+  - name: register ui service
+    shell: update-rc.d -f ui_{{ dist_id }} defaults 90 10
+    tags:
+      - start
+
+  - name: Switch on
+    become: yes
+    become_user: mad
+    shell: "{{ ui_dir }}/bin/on"
+    tags:
+      - update-bin
+      - start
+
+  - name: start madbanner service
+    service: name=ui_{{ dist_id }}
+        state=started
+        enabled=yes
+    tags:
+      - update-bin
+      - start
+
+  # - name: Start uwsgi
+  #   become: yes
+  #   become_user: mad
+  #   shell: "{{ ui_dir }}/bin/uwsgictl start"
+  #   tags:
+  #     - update-bin

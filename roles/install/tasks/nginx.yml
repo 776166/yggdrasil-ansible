@@ -1,0 +1,29 @@
+######### NGINX
+  - name: create nginx config
+    template:
+      src=../../../../dev/etc/dist/nginx.conf
+      dest=/etc/nginx/sites-available/{{ nginx_conf }}
+      mode=0444
+
+  - name: enable nginx config
+    file: src=/etc/nginx/sites-available/{{ nginx_conf }}
+      dest=/etc/nginx/sites-enabled/{{ nginx_conf }}
+      state=link
+
+  - name: remove nginx symlink to UI /etc/
+    file: path={{ base_dir }}/etc/nginx.conf
+        state=absent
+
+  - name: symlink nginx to UI /etc/
+    file: src=/etc/nginx/sites-available/{{ nginx_conf }}
+      dest={{ base_dir }}/etc/nginx.conf
+      state=link
+
+  - name: add auth if needed
+    copy: src=../../../../etc/httpdasswd/{{ mode }}.conf
+      dest=/etc/nginx/htpasswd/{{ server.url }}
+      mode=0444
+    when: server.auth == True
+
+  - name: reload nginx
+    service: name=nginx state=reloaded
